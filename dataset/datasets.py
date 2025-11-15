@@ -3,11 +3,10 @@ from torch.utils.data import Dataset, DataLoader
 import json
 
 class MultiTaskDataset(Dataset):
-    def __init__(self, data_file, label_list_file, task_list):
+    def __init__(self, data, label_list, task_list):
         super().__init__()
-        self.data = torch.load(data_file)
-        with open(label_list_file, 'r') as f:
-            self.label_list_per_task = json.load(f)
+        self.data = data
+        self.label_list_per_task = label_list
         self.task_list = task_list
         self.label2idx_per_task = {
             task: {label: idx for idx, label in enumerate(self.label_list_per_task[task])}
@@ -29,27 +28,28 @@ class MultiTaskDataset(Dataset):
             for label in labels:
                 label_tensor[self.label2idx_per_task[task][label]] = 1
             label_tensor_list.append(label_tensor)
-        return embedding, *label_tensor_list
+        return embedding, label_tensor_list
     
 
 if __name__ == "__main__":
+    data = torch.load('../data/test_merged_with_labels_filtered.pt')
+    with open('../data/label_list_per_task.json', 'r') as f:
+        label_list = json.load(f)
     dataset = MultiTaskDataset(
-        data_file='../data/test_merged_with_labels_filtered.pt',
-        label_list_file='../data/label_list_per_task.json',
+        data=data,
+        label_list=label_list,
         task_list=['EC number', 'Gene3D', 'Pfam']
     )
-    emb, task1_labels, task2_labels, task3_labels = dataset[0]
+    emb, (task1_labels, task2_labels, task3_labels) = dataset[0]
     print("Embedding shape:", emb.shape)
     print("Task 1 labels shape:", task1_labels)
     print("Task 2 labels shape:", task2_labels)
     print("Task 3 labels shape:", task3_labels)
-    # dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
     
-    # for batch in dataloader:
-    #     embedding = batch[0]
-    #     task1_labels = batch[1]
-    #     task2_labels = batch[2]
-    #     print("Embedding shape:", embedding.shape)
-    #     print("Task 1 labels shape:", task1_labels.shape)
-    #     print("Task 2 labels shape:", task2_labels.shape)
-    #     break
+    for batch in dataloader:
+        embeddings, label_tensors = batch
+        print("Batch embeddings shape:", embeddings.shape)
+        for i, labels in enumerate(label_tensors):
+            print(f"Batch labels for task {i+1} shape:", labels.shape)
+        break
