@@ -1,0 +1,27 @@
+data:
+  train_data_file: data/train_merged_with_labels.pt
+  test_data_file: data/test_merged_with_labels_filtered.pt
+  label_file: data/label_list_per_task.json
+  task_list:
+    - EC number
+    - Gene3D
+
+
+model:
+  model_type: MultiTaskMLP
+  input_dim: 1280
+  dropout: 0.5
+  shared_hidden_dims: [1280]
+  task_hidden_dims: [[], [], []]
+  task_out_dims: null
+
+
+train:
+  seed: 0
+  batch_size: 1000
+  num_epochs: 10_000
+  lr: 1.e-4
+  weight_decay: 1.e-4
+  patience: 20
+  loss: CrossEntropyLoss
+  optimizer: Adam
